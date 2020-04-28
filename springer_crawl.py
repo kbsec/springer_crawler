@@ -6,10 +6,16 @@ import  tqdm
 from urllib.parse import urljoin
 import os
 from multiprocessing import Pool
+import html
 
+def escape(s):
+    try:
+        return html.escape(s)
+    except:
+        return ''
 
 path = './data/'
-make_name = lambda x: path + x.replace(" ", '+') + ".pdf"
+make_name = lambda x: path + x.replace(" ", '+').replace("/", '-') + ".pdf"
 
 
 def get_pdf_link(open_url):
@@ -46,7 +52,7 @@ def download_pdf(item):
         with open(filename, 'wb') as f:
             f.write(r.content)
         return f'<a href="{filename}">{title}</a>'
-    return False 
+    return '' 
 
 
 
@@ -87,9 +93,15 @@ if __name__ == '__main__':
     pdf_pool = Pool(processes=threads)
     args = tuple(zip(df["Book Title"].values, df["pdf_links"].values))
     hrefs = [i for i in tqdm.tqdm(pdf_pool.imap_unordered(download_pdf, args), total=len(args))]
+    for column in df.columns:
+        df[column] = df[column].apply(escape)
     df['files'] = hrefs
-    with open('index.html', 'w+') as f:
+    pd.set_option('display.max_colwidth', -1)
+    with open('index_local.html', 'w+') as f:
         f.write(df.to_html(escape=False))
+
+
+
 
 
 
