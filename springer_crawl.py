@@ -72,7 +72,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     threads = args.threads
     if  os.path.exists('springer_with_direct_links.csv'):
-        df = pd.read_csv('springer_with_direct_links.csv')
+        df = pd.read_csv('springer_with_direct_links.csv', index_col=0)
 
     else:
         df = pd.read_excel(args.springer_filename)
@@ -93,12 +93,13 @@ if __name__ == '__main__':
     pdf_pool = Pool(processes=threads)
     args = tuple(zip(df["Book Title"].values, df["pdf_links"].values))
     hrefs = [i for i in tqdm.tqdm(pdf_pool.imap_unordered(download_pdf, args), total=len(args))]
-    for column in df.columns:
+    cols = list(df.columns)
+    for column in cols:
         df[column] = df[column].apply(escape)
     df['files'] = hrefs
     pd.set_option('display.max_colwidth', -1)
     with open('index_local.html', 'w+') as f:
-        f.write(df.to_html(escape=False))
+        f.write(df[['files'] + cols].to_html(escape=False))
 
 
 
